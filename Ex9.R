@@ -15,8 +15,6 @@ column <- 2
 wages<-"wages.csv"
 
 coeffvarfn <- function(dir, column, override = FALSE){
-  #set the present working directory to the directory path 
-  #setwd(dir)
  
   #generate the list of files in given directory to iterate through 
   files <- list.files(path=dir, full.names = TRUE)
@@ -33,7 +31,7 @@ coeffvarfn <- function(dir, column, override = FALSE){
     
     #print warning if < 50 obs and override=TRUE, otherwise print error and put
     # NA for that file in vector
-    if(nrow(dframe) < 50){ 
+    if(nrow(dframe) < 50 || nrow(dframe)-sum(is.na(dframe[,column])) < 50){ 
         
       if(override==FALSE){
           print(files[i])
@@ -41,33 +39,34 @@ coeffvarfn <- function(dir, column, override = FALSE){
           print(i)
           coeffvector[i]<-NA
         } else if(override==TRUE){
-          print(files[i])
-          print("Warning, this file contains less than 50 observations. The computed coefficient of variation for this file will be less reliable.")
-          print("The unreliable coefficient of variation for this file can be found in index ")
-          print(i)
-          print(" of the output vector.")
           
-            if(sum(is.na(dframe[,column])) > 0){
+            if(sum(is.na(dframe[,column])) > 0 && nrow(dframe)-sum(is.na(dframe[,column])) < 50){
               print(files[i])
-              print("This file has NA values present in the designated column, they were ignored in the computation and the resulting coefficient of variation can be found in the following index of the output vector:")
+              print("Warning, this file contains less than 50 observations after ignoring the NA values present in the designated column. The NA's were ignored in the computation and the resulting unreliable coefficient of variation can be found in the following index of the output vector:")
               print(i)
               dframe<- complete.cases(dframe[,column]) #ignores NAs
               coeffvector[i]=sd(dframe)/mean(dframe)
             } else {
+              print(files[i])
+              print("Warning, this file contains less than 50 observations. The computed coefficient of variation for this file will be less reliable.")
+              print("The unreliable coefficient of variation for this file can be found in the following index of the output vector:")
+              print(i)
               coeffvector[i]=sd(dframe[,column])/mean(dframe[,column])
             }
         }#end override conditional
       
     } else if(nrow(dframe) >= 50) {
-      if(sum(is.na(dframe[,column])) > 0){
-        print(files[i])
-        print("This file has NA values present in the designated column, they were ignored in the computation and the resulting coefficient of variation can be found in the following index of the output vector:")
-        print(i)
-        dframe<- complete.cases(dframe[,column]) #ignores NAs
-        coeffvector[i]=sd(dframe)/mean(dframe)
-      } else {
-        coeffvector[i]=sd(dframe[,column])/mean(dframe[,column])
-      }
+          
+        if(sum(is.na(dframe[,column])) > 0){
+          print(files[i])
+          print("This file has NA values present in the designated column, they were ignored in the computation and the resulting coefficient of variation can be found in the following index of the output vector:")
+          print(i)
+          dframe<- complete.cases(dframe[,column]) #ignores NAs
+          coeffvector[i]=sd(dframe)/mean(dframe)
+            
+        } else {
+          coeffvector[i]=sd(dframe[,column])/mean(dframe[,column])
+        }
     } #end observation length conditional
 
   } #end for loop
